@@ -1,0 +1,693 @@
+
+.uc-op-page {
+  min-height: 100vh;
+  padding: 0 22px 80px;
+  background: var(--uc-bg, #fffdf9);
+  color: var(--uc-text, #29243a);
+  font-family: "Lexend", sans-serif;
+}
+
+.uc-op-header {
+  display: flex;
+  width: min(1160px, 100%);
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin: auto;
+  padding: 22px 0;
+  border-bottom: 1px solid #eee9f5;
+}
+
+.uc-op-brand {
+  color: #6040bb;
+  font-size: 19px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.uc-op-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #7956d8;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.uc-op-hero {
+  max-width: 760px;
+  margin: 58px auto 65px;
+  text-align: center;
+}
+
+.uc-op-hero-icon,
+.uc-op-empty-icon {
+  display: flex;
+  width: 78px;
+  height: 78px;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 23px;
+  border-radius: 24px;
+}
+
+.uc-op-hero-icon.events,
+.uc-op-empty-icon.events {
+  background: #fff0f5;
+  color: #c94f7c;
+}
+
+.uc-op-hero-icon.tournaments,
+.uc-op-empty-icon.tournaments {
+  background: #fff3e8;
+  color: #d78335;
+}
+
+.uc-op-hero-icon.classes,
+.uc-op-empty-icon.classes {
+  background: #eaf3ff;
+  color: #3979d7;
+}
+
+.uc-op-eyebrow,
+.uc-op-small-label {
+  color: #7956d8;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.uc-op-hero h1,
+.uc-op-form-section h1 {
+  margin: 12px 0;
+  font-size: clamp(32px, 5vw, 47px);
+  font-weight: 800;
+  letter-spacing: -1.8px;
+}
+
+.uc-op-hero > p {
+  max-width: 650px;
+  margin: auto;
+  color: #777487;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.uc-op-list {
+  width: min(1160px, 100%);
+  margin: auto;
+}
+
+.uc-op-list-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 26px;
+}
+
+.uc-op-list-heading h2 {
+  margin: 7px 0 5px;
+  font-size: 26px;
+}
+
+.uc-op-list-heading p {
+  margin: 0;
+  color: #777487;
+  font-size: 12px;
+}
+
+.uc-op-count {
+  flex-shrink: 0;
+  padding: 9px 14px;
+  border-radius: 30px;
+  background: #f1edfc;
+  color: #7956d8;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.uc-op-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.uc-op-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #eee9f5;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 8px 25px rgba(49, 36, 82, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.uc-op-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 30px rgba(49, 36, 82, 0.09);
+}
+
+.uc-op-card-banner {
+  display: flex;
+  min-height: 165px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.uc-op-card-banner.events {
+  background: #fff0f5;
+  color: #c94f7c;
+}
+
+.uc-op-card-banner.tournaments {
+  background: #fff3e8;
+  color: #d78335;
+}
+
+.uc-op-card-banner.classes {
+  background: #eaf3ff;
+  color: #3979d7;
+}
+
+.uc-op-card-banner img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.uc-op-card-body {
+  padding: 25px;
+}
+
+.uc-op-status {
+  display: inline-block;
+  margin-bottom: 12px;
+  padding: 7px 11px;
+  border-radius: 30px;
+  background: #f1edfc;
+  color: #7956d8;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.uc-op-card-body h3 {
+  margin: 0 0 12px;
+  color: #29243a;
+  font-size: 19px;
+  line-height: 1.45;
+}
+
+.uc-op-card-body > p {
+  color: #777487;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.uc-op-details {
+  display: grid;
+  gap: 12px;
+  margin: 21px 0;
+}
+
+.uc-op-details > div {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: #666174;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.uc-op-details svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #7956d8;
+}
+
+.uc-op-card-body .uc-op-deadline {
+  margin: 14px 0;
+  color: #c94f7c;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.uc-op-primary-button,
+.uc-op-secondary-button {
+  display: inline-flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 12px 20px;
+  border: 0;
+  border-radius: 30px;
+  background: #7956d8;
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.uc-op-primary-button:hover {
+  transform: translateY(-2px);
+  background: #6040bb;
+}
+
+.uc-op-secondary-button {
+  background: #f1edfc;
+  color: #6040bb;
+}
+
+.uc-op-empty-state {
+  max-width: 650px;
+  margin: 25px auto;
+  padding: 50px 25px;
+  border: 1px solid #eee9f5;
+  border-radius: 22px;
+  background: #fff;
+  text-align: center;
+}
+
+.uc-op-empty-state h3 {
+  margin: 18px 0 10px;
+  font-size: 20px;
+}
+
+.uc-op-empty-state > p {
+  margin: 0 auto 15px;
+  color: #777487;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+/* Large floating add button */
+
+.uc-op-add-button {
+  position: fixed;
+  right: 35px;
+  bottom: 32px;
+  z-index: 50;
+  display: flex;
+  width: 76px;
+  height: 76px;
+  align-items: center;
+  justify-content: center;
+  border: 5px solid #fff;
+  border-radius: 50%;
+  background: #7956d8;
+  color: #fff;
+  box-shadow: 0 8px 28px rgba(77, 48, 153, 0.3);
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.uc-op-add-button:hover {
+  transform: scale(1.08);
+  background: #6040bb;
+}
+
+/* Add item modal */
+
+.uc-op-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 20px;
+  background: rgba(32, 25, 48, 0.58);
+  backdrop-filter: blur(5px);
+}
+
+.uc-op-modal {
+  width: min(650px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 28px;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.2);
+}
+
+.uc-op-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 24px;
+}
+
+.uc-op-modal-header h2 {
+  margin: 8px 0;
+  font-size: 24px;
+}
+
+.uc-op-modal-header p {
+  margin: 0;
+  color: #777487;
+  font-size: 12px;
+}
+
+.uc-op-close {
+  display: flex;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: #f4f1fa;
+  color: #6040bb;
+  cursor: pointer;
+}
+
+.uc-op-form {
+  display: grid;
+  gap: 17px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: left;
+}
+
+.uc-op-upload {
+  display: flex;
+  min-height: 150px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  overflow: hidden;
+  border: 2px dashed #d9cffa;
+  border-radius: 15px;
+  background: #faf8ff;
+  color: #7956d8;
+  cursor: pointer;
+}
+
+.uc-op-upload input {
+  display: none;
+}
+
+.uc-op-upload strong {
+  font-size: 13px;
+}
+
+.uc-op-upload span {
+  color: #888196;
+  font-size: 11px;
+}
+
+.uc-op-upload img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.uc-op-form label {
+  display: grid;
+  gap: 8px;
+  color: #494458;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.uc-op-form input:not([type="checkbox"]):not([type="file"]),
+.uc-op-form select,
+.uc-op-form textarea {
+  width: 100%;
+  min-height: 45px;
+  padding: 12px 14px;
+  border: 1px solid #e8e3ef;
+  border-radius: 10px;
+  outline: none;
+  background: #fff;
+  color: #29243a;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.uc-op-form textarea {
+  resize: vertical;
+}
+
+.uc-op-form input:focus,
+.uc-op-form textarea:focus {
+  border-color: #7956d8;
+  box-shadow: 0 0 0 3px rgba(121, 86, 216, 0.1);
+}
+
+.uc-op-form-two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.uc-op-publish-option {
+  display: flex !important;
+  align-items: center;
+  gap: 10px !important;
+  padding: 13px;
+  border-radius: 10px;
+  background: #f5f1ff;
+  color: #6040bb !important;
+}
+
+.uc-op-publish-option input {
+  width: 17px;
+  height: 17px;
+  accent-color: #7956d8;
+}
+
+.uc-op-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.uc-op-cancel {
+  min-height: 44px;
+  padding: 10px 19px;
+  border: 1px solid #e8e3ef;
+  border-radius: 30px;
+  background: #fff;
+  color: #666174;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Registration page */
+
+.uc-op-form-section {
+  width: min(650px, 100%);
+  margin: 55px auto 0;
+  text-align: center;
+}
+
+.uc-op-form-intro {
+  margin: 0 0 25px;
+  color: #777487;
+  font-size: 14px;
+}
+
+.uc-op-form-event {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 5px;
+  padding: 18px;
+  border-radius: 15px;
+  background: #f7f4ff;
+  color: #6040bb;
+  font-size: 13px;
+}
+
+.uc-op-form-event span {
+  color: #777487;
+  font-size: 12px;
+}
+
+.uc-op-form h3 {
+  margin: 8px 0 0;
+  font-size: 16px;
+}
+
+.uc-op-submit {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.uc-op-form-note {
+  margin: 0;
+  color: #9993a5;
+  font-size: 11px;
+  line-height: 1.7;
+  text-align: center;
+}
+
+.uc-op-success {
+  max-width: 550px;
+  margin: 100px auto;
+  padding: 45px 25px;
+  border: 1px solid #eee9f5;
+  border-radius: 22px;
+  background: #fff;
+  text-align: center;
+}
+
+.uc-op-success > svg {
+  color: #55bfa0;
+}
+
+.uc-op-success h1 {
+  margin: 18px 0 10px;
+}
+
+.uc-op-success p {
+  margin-bottom: 25px;
+  color: #777487;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.uc-op-empty {
+  padding: 50px;
+  text-align: center;
+}
+
+@media (max-width: 750px) {
+  .uc-op-page {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .uc-op-hero {
+    margin: 45px auto;
+  }
+
+  .uc-op-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .uc-op-list-heading h2 {
+    font-size: 21px;
+  }
+
+  .uc-op-card-body {
+    padding: 21px;
+  }
+
+  .uc-op-modal {
+    padding: 22px 17px;
+  }
+
+  .uc-op-add-button {
+    right: 20px;
+    bottom: 22px;
+    width: 65px;
+    height: 65px;
+  }
+
+  .uc-op-header {
+    padding: 17px 0;
+  }
+
+  .uc-op-brand {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 450px) {
+  .uc-op-form-two {
+    grid-template-columns: 1fr;
+  }
+
+  .uc-op-list-heading {
+    align-items: flex-start;
+  }
+
+  .uc-op-count {
+    font-size: 10px;
+  }
+
+  .uc-op-modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .uc-op-modal-actions button {
+    width: 100%;
+  }
+}
+
+/* ======================================
+   ADMIN OPPORTUNITY CONTROLS
+====================================== */
+
+.uc-op-admin-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.uc-op-admin-actions span {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 20px;
+}
+
+.uc-op-admin-published {
+  color: #18794e;
+  background: #e8f5ee;
+}
+
+.uc-op-admin-draft {
+  color: #8a6412;
+  background: #fff4d6;
+}
+
+.uc-op-admin-actions button {
+  border: 1px solid #e5e2ec;
+  background: #ffffff;
+  color: #383344;
+  border-radius: 7px;
+  padding: 7px 11px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.uc-op-admin-actions button:hover {
+  background: #f5f3fa;
+}
+
+.uc-op-admin-actions button:last-child {
+  color: #c62828;
+  border-color: #f0d5d5;
+}
+
+.uc-op-admin-actions button:last-child:hover {
+  background: #fff1f1;
+}
+
+.uc-op-error-message {
+  color: #c62828;
+  font-size: 13px;
+  margin: 8px 0;
+}
