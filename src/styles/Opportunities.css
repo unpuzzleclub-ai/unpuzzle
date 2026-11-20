@@ -1,4 +1,8 @@
 
+/* =========================================
+   OPPORTUNITIES - BASE
+========================================= */
+
 .uc-op-page {
   min-height: 100vh;
   padding: 0 22px 80px;
@@ -34,6 +38,10 @@
   font-weight: 600;
   text-decoration: none;
 }
+
+/* =========================================
+   HERO SECTION
+========================================= */
 
 .uc-op-hero {
   max-width: 760px;
@@ -94,6 +102,10 @@
   line-height: 1.8;
 }
 
+/* =========================================
+   OPPORTUNITY LIST
+========================================= */
+
 .uc-op-list {
   width: min(1160px, 100%);
   margin: auto;
@@ -134,6 +146,10 @@
   gap: 24px;
 }
 
+/* =========================================
+   OPPORTUNITY CARDS
+========================================= */
+
 .uc-op-card {
   min-width: 0;
   overflow: hidden;
@@ -149,12 +165,21 @@
   box-shadow: 0 14px 30px rgba(49, 36, 82, 0.09);
 }
 
+/* =========================================
+   POSTER IMAGE
+   Landscape display - 16:9
+   Full image visible without cropping
+========================================= */
+
 .uc-op-card-banner {
   display: flex;
-  min-height: 165px;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  min-height: 0;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  background: #f5f3fa;
 }
 
 .uc-op-card-banner.events {
@@ -172,11 +197,67 @@
   color: #3979d7;
 }
 
-.uc-op-card-banner img {
+.uc-op-card-banner img,
+.uc-op-card-poster {
+  display: block;
   width: 100%;
-  height: 200px;
-  object-fit: cover;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
 }
+
+/* =========================================
+   BROCHURE BUTTONS
+   Display directly below poster
+========================================= */
+
+.uc-op-brochure-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 16px;
+  margin: 0;
+  background: #fff;
+}
+
+.uc-op-brochure-view,
+.uc-op-brochure-download {
+  display: inline-flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 11px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  transition: 0.2s ease;
+}
+
+.uc-op-brochure-view {
+  background: #eee8ff;
+  color: #5735a5;
+}
+
+.uc-op-brochure-view:hover {
+  background: #e1d6ff;
+}
+
+.uc-op-brochure-download {
+  background: #5735a5;
+  color: #fff;
+}
+
+.uc-op-brochure-download:hover {
+  background: #43278c;
+}
+
+/* =========================================
+   CARD CONTENT
+========================================= */
 
 .uc-op-card-body {
   padding: 25px;
@@ -234,6 +315,34 @@
   font-weight: 600;
 }
 
+/* =========================================
+   CATEGORY FEES ON CARDS
+========================================= */
+
+.uc-op-category-fee-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 14px 0;
+  padding: 14px;
+  border-radius: 9px;
+  background: #faf9ff;
+}
+
+.uc-op-category-fee-list strong {
+  margin-bottom: 3px;
+  color: #333;
+}
+
+.uc-op-category-fee-list span {
+  color: #555;
+  font-size: 13px;
+}
+
+/* =========================================
+   BUTTONS
+========================================= */
+
 .uc-op-primary-button,
 .uc-op-secondary-button {
   display: inline-flex;
@@ -264,6 +373,10 @@
   color: #6040bb;
 }
 
+/* =========================================
+   EMPTY STATES
+========================================= */
+
 .uc-op-empty-state {
   max-width: 650px;
   margin: 25px auto;
@@ -286,7 +399,14 @@
   line-height: 1.8;
 }
 
-/* Large floating add button */
+.uc-op-empty {
+  padding: 50px;
+  text-align: center;
+}
+
+/* =========================================
+   FLOATING ADD BUTTON
+========================================= */
 
 .uc-op-add-button {
   position: fixed;
@@ -312,7 +432,9 @@
   background: #6040bb;
 }
 
-/* Add item modal */
+/* =========================================
+   MODAL
+========================================= */
 
 .uc-op-modal-overlay {
   position: fixed;
@@ -370,6 +492,10 @@
   cursor: pointer;
 }
 
+/* =========================================
+   FORMS
+========================================= */
+
 .uc-op-form {
   display: grid;
   gap: 17px;
@@ -379,40 +505,6 @@
   background: transparent;
   box-shadow: none;
   text-align: left;
-}
-
-.uc-op-upload {
-  display: flex;
-  min-height: 150px;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  overflow: hidden;
-  border: 2px dashed #d9cffa;
-  border-radius: 15px;
-  background: #faf8ff;
-  color: #7956d8;
-  cursor: pointer;
-}
-
-.uc-op-upload input {
-  display: none;
-}
-
-.uc-op-upload strong {
-  font-size: 13px;
-}
-
-.uc-op-upload span {
-  color: #888196;
-  font-size: 11px;
-}
-
-.uc-op-upload img {
-  width: 100%;
-  height: 180px;
-  object-fit: cover;
 }
 
 .uc-op-form label {
@@ -443,6 +535,7 @@
 }
 
 .uc-op-form input:focus,
+.uc-op-form select:focus,
 .uc-op-form textarea:focus {
   border-color: #7956d8;
   box-shadow: 0 0 0 3px rgba(121, 86, 216, 0.1);
@@ -454,43 +547,237 @@
   gap: 14px;
 }
 
-.uc-op-publish-option {
-  display: flex !important;
-  align-items: center;
-  gap: 10px !important;
-  padding: 13px;
-  border-radius: 10px;
-  background: #f5f1ff;
-  color: #6040bb !important;
-}
-
-.uc-op-publish-option input {
-  width: 17px;
-  height: 17px;
-  accent-color: #7956d8;
-}
-
-.uc-op-modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
+.uc-op-submit {
+  width: 100%;
   margin-top: 8px;
 }
 
-.uc-op-cancel {
-  min-height: 44px;
-  padding: 10px 19px;
-  border: 1px solid #e8e3ef;
-  border-radius: 30px;
-  background: #fff;
-  color: #666174;
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 600;
+.uc-op-form-note {
+  margin: 0;
+  color: #9993a5;
+  font-size: 11px;
+  line-height: 1.7;
+  text-align: center;
+}
+
+/* =========================================
+   POSTER UPLOAD
+========================================= */
+
+.uc-op-upload {
+  display: flex;
+  min-height: 150px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  overflow: hidden;
+  border: 2px dashed #d9cffa;
+  border-radius: 15px;
+  background: #faf8ff;
+  color: #7956d8;
   cursor: pointer;
 }
 
-/* Registration page */
+.uc-op-upload input {
+  display: none;
+}
+
+.uc-op-upload strong {
+  font-size: 13px;
+}
+
+.uc-op-upload span {
+  color: #888196;
+  font-size: 11px;
+}
+
+.uc-op-upload img {
+  display: block;
+  width: 100%;
+  max-height: 220px;
+  object-fit: contain;
+}
+
+/* =========================================
+   CATEGORY-WISE ENTRY FEES
+========================================= */
+
+.uc-op-category-prices {
+  margin: 10px 0 16px;
+  padding: 18px;
+  border: 1px solid #e5e0f2;
+  border-radius: 12px;
+  background: #faf9ff;
+}
+
+.uc-op-category-prices h3 {
+  margin: 0 0 6px;
+  font-size: 17px;
+}
+
+.uc-op-category-prices > p {
+  margin: 0 0 16px;
+  color: #777;
+  font-size: 13px;
+}
+
+.uc-op-category-price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid #e9e5f1;
+}
+
+.uc-op-category-price-row > strong {
+  font-size: 14px;
+}
+
+.uc-op-category-price-row label {
+  width: 150px;
+}
+
+.uc-op-category-price-row label span {
+  display: block;
+  margin-bottom: 5px;
+  color: #666;
+  font-size: 12px;
+}
+
+.uc-op-category-price-row input {
+  width: 100%;
+}
+
+/* =========================================
+   BROCHURE UPLOAD
+========================================= */
+
+.uc-op-brochure-upload {
+  margin: 14px 0;
+  padding: 16px;
+  border: 1px dashed #b8a5e7;
+  border-radius: 12px;
+  background: #faf9ff;
+}
+
+.uc-op-brochure-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.uc-op-brochure-heading > svg {
+  flex-shrink: 0;
+  color: #6541c1;
+}
+
+.uc-op-brochure-heading strong {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.uc-op-brochure-heading p {
+  margin: 0;
+  color: #777;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.uc-op-brochure-input {
+  display: block;
+  cursor: pointer;
+}
+
+.uc-op-brochure-input input {
+  width: 100%;
+}
+
+.uc-op-brochure-input span {
+  display: block;
+  padding: 12px;
+  border-radius: 8px;
+  background: #eee8ff;
+  color: #5735a5;
+  font-weight: 600;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.uc-op-brochure-remove {
+  margin-top: 10px;
+  border: 0;
+  background: transparent;
+  color: #b42318;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+/* =========================================
+   ADMIN CONTROLS
+========================================= */
+
+.uc-op-admin-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.uc-op-admin-actions span {
+  padding: 6px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.uc-op-admin-published {
+  background: #e8f5ee;
+  color: #18794e;
+}
+
+.uc-op-admin-draft {
+  background: #fff4d6;
+  color: #8a6412;
+}
+
+.uc-op-admin-actions button {
+  padding: 7px 11px;
+  border: 1px solid #e5e2ec;
+  border-radius: 7px;
+  background: #fff;
+  color: #383344;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.uc-op-admin-actions button:hover {
+  background: #f5f3fa;
+}
+
+.uc-op-admin-actions button:last-child {
+  border-color: #f0d5d5;
+  color: #c62828;
+}
+
+.uc-op-admin-actions button:last-child:hover {
+  background: #fff1f1;
+}
+
+.uc-op-error-message {
+  margin: 8px 0;
+  color: #c62828;
+  font-size: 13px;
+}
+
+/* =========================================
+   REGISTRATION PAGE
+========================================= */
 
 .uc-op-form-section {
   width: min(650px, 100%);
@@ -525,18 +812,9 @@
   font-size: 16px;
 }
 
-.uc-op-submit {
-  width: 100%;
-  margin-top: 8px;
-}
-
-.uc-op-form-note {
-  margin: 0;
-  color: #9993a5;
-  font-size: 11px;
-  line-height: 1.7;
-  text-align: center;
-}
+/* =========================================
+   SUCCESS STATE
+========================================= */
 
 .uc-op-success {
   max-width: 550px;
@@ -563,10 +841,9 @@
   line-height: 1.8;
 }
 
-.uc-op-empty {
-  padding: 50px;
-  text-align: center;
-}
+/* =========================================
+   RESPONSIVE - TABLET
+========================================= */
 
 @media (max-width: 750px) {
   .uc-op-page {
@@ -610,7 +887,11 @@
   }
 }
 
-@media (max-width: 450px) {
+/* =========================================
+   RESPONSIVE - MOBILE
+========================================= */
+
+@media (max-width: 480px) {
   .uc-op-form-two {
     grid-template-columns: 1fr;
   }
@@ -630,64 +911,23 @@
   .uc-op-modal-actions button {
     width: 100%;
   }
-}
 
-/* ======================================
-   ADMIN OPPORTUNITY CONTROLS
-====================================== */
+  .uc-op-category-price-row {
+    align-items: flex-start;
+  }
 
-.uc-op-admin-actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 12px 0;
-}
+  .uc-op-category-price-row label {
+    width: 125px;
+  }
 
-.uc-op-admin-actions span {
-  font-size: 12px;
-  font-weight: 600;
-  padding: 6px 10px;
-  border-radius: 20px;
-}
+  .uc-op-brochure-actions {
+    gap: 7px;
+    padding: 10px;
+  }
 
-.uc-op-admin-published {
-  color: #18794e;
-  background: #e8f5ee;
-}
-
-.uc-op-admin-draft {
-  color: #8a6412;
-  background: #fff4d6;
-}
-
-.uc-op-admin-actions button {
-  border: 1px solid #e5e2ec;
-  background: #ffffff;
-  color: #383344;
-  border-radius: 7px;
-  padding: 7px 11px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.uc-op-admin-actions button:hover {
-  background: #f5f3fa;
-}
-
-.uc-op-admin-actions button:last-child {
-  color: #c62828;
-  border-color: #f0d5d5;
-}
-
-.uc-op-admin-actions button:last-child:hover {
-  background: #fff1f1;
-}
-
-.uc-op-error-message {
-  color: #c62828;
-  font-size: 13px;
-  margin: 8px 0;
+  .uc-op-brochure-view,
+  .uc-op-brochure-download {
+    padding: 10px 5px;
+    font-size: 12px;
+  }
 }
