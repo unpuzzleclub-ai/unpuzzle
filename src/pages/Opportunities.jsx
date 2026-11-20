@@ -25,10 +25,12 @@ import {
   X,
   ImagePlus,
   CheckCircle2,
+  FileText,
+  Download,
+  Eye,
 } from "lucide-react";
 
 import { supabase } from "../lib/supabase";
-
 import "../styles/Opportunities.css";
 
 // ======================================
@@ -43,14 +45,18 @@ const initialData = {
   "online-classes": [],
 };
 
-// Convert database records into UI records.
+const STORAGE_BUCKET = "opportunity-posters";
+
+function getPublicUrl(path) {
+  if (!path) return "";
+
+  return supabase.storage
+    .from(STORAGE_BUCKET)
+    .getPublicUrl(path).data.publicUrl;
+}
 
 function mapOpportunity(row) {
-  const image = row.image_path
-    ? supabase.storage
-        .from("opportunity-posters")
-        .getPublicUrl(row.image_path).data.publicUrl
-    : "";
+  const brochureUrl = getPublicUrl(row.brochure_path);
 
   return {
     id: row.id,
@@ -67,9 +73,17 @@ function mapOpportunity(row) {
     platform: row.platform || "",
     format: row.format || "",
     category: row.category || "",
+    category_prices: row.category_prices || {},
     prizes: row.prizes || "",
-    image,
+    image: getPublicUrl(row.image_path),
     image_path: row.image_path || null,
+    brochure: brochureUrl,
+    brochureDownload: brochureUrl
+      ? `${brochureUrl}?download=${encodeURIComponent(
+          row.brochure_path.split("/").pop()
+        )}`
+      : "",
+    brochure_path: row.brochure_path || null,
     status: row.status,
   };
 }
@@ -83,8 +97,6 @@ export function OpportunityProvider({ children }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
-
-  // Load opportunities and check Admin authorization.
 
   useEffect(() => {
     let active = true;
@@ -115,9 +127,6 @@ export function OpportunityProvider({ children }) {
         .from("opportunities")
         .select("*")
         .order("created_at", { ascending: false });
-
-      // Public visitors only load published opportunities.
-      // Database RLS also enforces this restriction.
 
       if (!admin) {
         query = query.eq("status", "Published");
@@ -165,9 +174,7 @@ export function OpportunityProvider({ children }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       Promise.resolve().then(() => {
-        if (active) {
-          loadOpportunities(session);
-        }
+        if (active) loadOpportunities(session);
       });
     });
 
@@ -187,71 +194,101 @@ export function OpportunityProvider({ children }) {
     }
 
     let imagePath = null;
+    let brochurePath = null;
 
-    // Upload poster image.
+    const storage = supabase.storage.from(STORAGE_BUCKET);
 
-    if (item.imageFile) {
-      const file = item.imageFile;
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
-      const filePath = `${type}/${crypto.randomUUID()}-${safeName}`;
+    try {
+      // Upload poster image.
 
-      const { error: uploadError } = await supabase.storage
-        .from("opportunity-posters")
-        .upload(filePath, file, {
+      if (item.imageFile) {
+        const file = item.imageFile;
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
+
+        imagePath = `${type}/${crypto.randomUUID()}-${safeName}`;
+
+        const { error } = await storage.upload(imagePath, file, {
           contentType: file.type,
           upsert: false,
         });
 
-      if (uploadError) {
-        throw uploadError;
+        if (error) throw error;
       }
 
-      imagePath = filePath;
-    }
+      // Upload PDF brochure.
 
-    const record = {
-      type,
-      title: item.title,
-      description: item.description,
-      date: item.date || null,
-      time: item.time || null,
-      venue: item.venue || null,
-      fee: item.fee || null,
-      deadline: item.deadline || null,
-      instructor: item.instructor || null,
-      duration: item.duration || null,
-      platform: item.platform || null,
-      format: item.format || null,
-      category: item.category || null,
-      prizes: item.prizes || null,
-      image_path: imagePath,
-      status: item.status,
-    };
+      if (type === "tournaments" && item.brochureFile) {
+        const file = item.brochureFile;
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
 
-    const { data: inserted, error: insertError } = await supabase
-      .from("opportunities")
-      .insert(record)
-      .select()
-      .single();
+        brochurePath = `brochures/${crypto.randomUUID()}-${safeName}`;
 
-    if (insertError) {
-      if (imagePath) {
-        await supabase.storage
-          .from("opportunity-posters")
-          .remove([imagePath]);
+        const { error } = await storage.upload(
+          brochurePath,
+          file,
+          {
+            contentType: "application/pdf",
+            upsert: false,
+          }
+        );
+
+        if (error) throw error;
       }
 
-      throw insertError;
+      const record = {
+        type,
+        title: item.title,
+        description: item.description,
+        date: item.date || null,
+        time: item.time || null,
+        venue: item.venue || null,
+        fee: type === "tournaments" ? null : item.fee || null,
+        deadline: item.deadline || null,
+        instructor: item.instructor || null,
+        duration: item.duration || null,
+        platform: item.platform || null,
+        format: item.format || null,
+        category: item.category || null,
+        category_prices:
+          type === "tournaments" ? item.category_prices || {} : {},
+        prizes: item.prizes || null,
+        image_path: imagePath,
+        brochure_path: brochurePath,
+        status: item.status,
+      };
+
+      const { data: inserted, error: insertError } = await supabase
+        .from("opportunities")
+        .insert(record)
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      const savedItem = mapOpportunity(inserted);
+
+      setData((previous) => ({
+        ...previous,
+        [type]: [savedItem, ...previous[type]],
+      }));
+
+      return savedItem;
+    } catch (error) {
+      // Remove uploaded files if the database insert fails.
+
+      const uploadedFiles = [imagePath, brochurePath].filter(Boolean);
+
+      if (uploadedFiles.length) {
+        const { error: cleanupError } =
+          await storage.remove(uploadedFiles);
+
+        if (cleanupError) {
+          console.error("Storage cleanup failed:", cleanupError);
+        }
+      }
+
+      throw error;
     }
-
-    const savedItem = mapOpportunity(inserted);
-
-    setData((previous) => ({
-      ...previous,
-      [type]: [savedItem, ...previous[type]],
-    }));
-
-    return savedItem;
   };
 
   // ======================================
@@ -273,9 +310,7 @@ export function OpportunityProvider({ children }) {
       .select()
       .single();
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
     const savedItem = mapOpportunity(updated);
 
@@ -303,19 +338,20 @@ export function OpportunityProvider({ children }) {
       .delete()
       .eq("id", item.id);
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
-    // Delete associated poster after database deletion.
+    const filesToRemove = [
+      item.image_path,
+      item.brochure_path,
+    ].filter(Boolean);
 
-    if (item.image_path) {
+    if (filesToRemove.length) {
       const { error: storageError } = await supabase.storage
-        .from("opportunity-posters")
-        .remove([item.image_path]);
+        .from(STORAGE_BUCKET)
+        .remove(filesToRemove);
 
       if (storageError) {
-        console.error("Poster deletion failed:", storageError);
+        console.error("Storage file deletion failed:", storageError);
       }
     }
 
@@ -409,8 +445,20 @@ function AddOpportunityModal({ type, onClose, onAdd }) {
 
   const [imagePreview, setImagePreview] = useState("");
   const [imageFile, setImageFile] = useState(null);
+  const [brochureFile, setBrochureFile] = useState(null);
+  const [categoryText, setCategoryText] = useState("");
+  const [categoryPrices, setCategoryPrices] = useState({});
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  const categoryNames = [
+    ...new Set(
+      categoryText
+        .split(",")
+        .map((category) => category.trim())
+        .filter(Boolean)
+    ),
+  ];
 
   const handleImage = (event) => {
     const file = event.target.files?.[0];
@@ -418,17 +466,61 @@ function AddOpportunityModal({ type, onClose, onAdd }) {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      alert("Please select a valid image.");
+      setErrorMessage("Please select a valid image.");
+      event.target.value = "";
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert("Please select an image smaller than 5 MB.");
+      setErrorMessage("Please select an image smaller than 5 MB.");
+      event.target.value = "";
       return;
     }
 
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
+    setErrorMessage("");
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleBrochure = (event) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      setBrochureFile(null);
+      return;
+    }
+
+    const isPdf =
+      file.type === "application/pdf" ||
+      file.name.toLowerCase().endsWith(".pdf");
+
+    if (!isPdf) {
+      setErrorMessage("Please upload a PDF brochure.");
+      event.target.value = "";
+      setBrochureFile(null);
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setErrorMessage("Brochure size must be below 10 MB.");
+      event.target.value = "";
+      setBrochureFile(null);
+      return;
+    }
+
+    setErrorMessage("");
+    setBrochureFile(file);
+  };
+
+  const updateCategoryPrice = (category, value) => {
+    setCategoryPrices((previous) => ({
+      ...previous,
+      [category]: value,
+    }));
   };
 
   const handleSubmit = async (event) => {
@@ -438,13 +530,54 @@ function AddOpportunityModal({ type, onClose, onAdd }) {
 
     const form = new FormData(event.currentTarget);
 
-    const getValue = (name) => {
-      return (form.get(name) || "").toString().trim();
-    };
+    const getValue = (name) =>
+      (form.get(name) || "").toString().trim();
+
+    const title = getValue("title");
+    const description = getValue("description");
+
+    if (!title || !description) {
+      setErrorMessage("Please enter the title and description.");
+      return;
+    }
+
+    let prices = {};
+
+    if (type === "tournaments") {
+      if (categoryNames.length === 0) {
+        setErrorMessage("Please enter at least one tournament category.");
+        return;
+      }
+
+      const missingPrice = categoryNames.find((category) => {
+        const value = categoryPrices[category];
+
+        return (
+          value === undefined ||
+          String(value).trim() === "" ||
+          !Number.isFinite(Number(value)) ||
+          Number(value) < 0
+        );
+      });
+
+      if (missingPrice) {
+        setErrorMessage(
+          `Please enter a valid entry fee for ${missingPrice}.`
+        );
+        return;
+      }
+
+      prices = Object.fromEntries(
+        categoryNames.map((category) => [
+          category,
+          Number(categoryPrices[category]),
+        ])
+      );
+    }
 
     const item = {
-      title: getValue("title"),
-      description: getValue("description"),
+      title,
+      description,
       date: getValue("date"),
       time: getValue("time"),
       venue: getValue("venue"),
@@ -454,13 +587,16 @@ function AddOpportunityModal({ type, onClose, onAdd }) {
       duration: getValue("duration"),
       platform: getValue("platform"),
       format: getValue("format"),
-      category: getValue("category"),
+      category:
+        type === "tournaments"
+          ? categoryNames.join(", ")
+          : getValue("category"),
+      category_prices: prices,
       prizes: getValue("prizes"),
       imageFile,
+      brochureFile,
       status: form.get("publish") ? "Published" : "Draft",
     };
-
-    if (!item.title) return;
 
     try {
       setSaving(true);
@@ -480,7 +616,10 @@ function AddOpportunityModal({ type, onClose, onAdd }) {
   };
 
   return (
-    <div className="uc-op-modal-overlay" onMouseDown={onClose}>
+    <div
+      className="uc-op-modal-overlay"
+      onMouseDown={onClose}
+    >
       <section
         className="uc-op-modal"
         role="dialog"
@@ -519,12 +658,14 @@ function AddOpportunityModal({ type, onClose, onAdd }) {
             />
 
             {imagePreview ? (
-              <img src={imagePreview} alt="Preview" />
+              <img src={imagePreview} alt="Poster preview" />
             ) : (
               <>
                 <ImagePlus size={30} />
                 <strong>Upload {config.singular} Image</strong>
-                <span>Select an image from your device (max 5 MB)</span>
+                <span>
+                  Select an image from your device (max 5 MB)
+                </span>
               </>
             )}
           </label>
@@ -562,7 +703,7 @@ function AddOpportunityModal({ type, onClose, onAdd }) {
             </label>
           </div>
 
-          {/* EVENTS AND TOURNAMENTS */}
+          {/* VENUE */}
 
           {type !== "online-classes" && (
             <label>
@@ -619,12 +760,56 @@ function AddOpportunityModal({ type, onClose, onAdd }) {
               </label>
 
               <label>
-                Categories
+                Categories *
                 <input
-                  name="category"
-                  placeholder="Under 8, Under 10, Open"
+                  value={categoryText}
+                  onChange={(event) => {
+                    setCategoryText(event.target.value);
+                    setErrorMessage("");
+                  }}
+                  placeholder="Under 8, Under 10, Under 12, Open"
+                  required
                 />
+                <small>
+                  Separate each category using a comma.
+                </small>
               </label>
+
+              {categoryNames.length > 0 && (
+                <div className="uc-op-category-prices">
+                  <h3>Category-wise Entry Fees *</h3>
+                  <p>
+                    Enter the registration price for every category.
+                  </p>
+
+                  {categoryNames.map((category) => (
+                    <div
+                      className="uc-op-category-price-row"
+                      key={category}
+                    >
+                      <strong>{category}</strong>
+
+                      <label>
+                        <span>Entry Fee (₹)</span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          placeholder="Enter amount"
+                          value={categoryPrices[category] ?? ""}
+                          onChange={(event) =>
+                            updateCategoryPrice(
+                              category,
+                              event.target.value
+                            )
+                          }
+                          required
+                        />
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <label>
                 Prizes
@@ -633,16 +818,60 @@ function AddOpportunityModal({ type, onClose, onAdd }) {
                   placeholder="Enter prize details"
                 />
               </label>
+
+              {/* BROCHURE UPLOAD */}
+
+              <div className="uc-op-brochure-upload">
+                <div className="uc-op-brochure-heading">
+                  <FileText size={23} />
+                  <div>
+                    <strong>Tournament Brochure (PDF)</strong>
+                    <p>
+                      Upload a PDF for visitors to view and download.
+                      Maximum size: 10 MB.
+                    </p>
+                  </div>
+                </div>
+
+                <label className="uc-op-brochure-input">
+                  <input
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    onChange={handleBrochure}
+                  />
+
+                  <span>
+                    {brochureFile
+                      ? brochureFile.name
+                      : "Choose PDF Brochure"}
+                  </span>
+                </label>
+
+                {brochureFile && (
+                  <button
+                    type="button"
+                    className="uc-op-brochure-remove"
+                    onClick={() => setBrochureFile(null)}
+                  >
+                    Remove selected brochure
+                  </button>
+                )}
+              </div>
             </>
           )}
 
           {/* FEE AND DEADLINE */}
 
           <div className="uc-op-form-two">
-            <label>
-              Fee
-              <input name="fee" placeholder="₹500" />
-            </label>
+            {type !== "tournaments" && (
+              <label>
+                Fee
+                <input
+                  name="fee"
+                  placeholder="₹500"
+                />
+              </label>
+            )}
 
             <label>
               Registration Deadline
@@ -708,9 +937,6 @@ export function OpportunityListingPage({ type }) {
   const config = pageConfig[type];
   const PageIcon = config.icon;
 
-  // Admin sees drafts and published items.
-  // Public visitors only see published items.
-
   const items = context.isAdmin
     ? context.data[type] || []
     : (context.data[type] || []).filter(
@@ -725,9 +951,7 @@ export function OpportunityListingPage({ type }) {
     try {
       await context.updateOpportunity(item.id, {
         status:
-          item.status === "Published"
-            ? "Draft"
-            : "Published",
+          item.status === "Published" ? "Draft" : "Published",
       });
     } catch (error) {
       console.error("Status update failed:", error);
@@ -802,8 +1026,6 @@ export function OpportunityListingPage({ type }) {
           </span>
         </div>
 
-        {/* LOADING */}
-
         {context.loading ? (
           <div className="uc-op-empty-state">
             <p>Loading {config.title.toLowerCase()}...</p>
@@ -819,13 +1041,49 @@ export function OpportunityListingPage({ type }) {
               <article className="uc-op-card" key={item.id}>
                 {/* POSTER */}
 
-                <div className={`uc-op-card-banner ${config.accent}`}>
+                {/* <div className={`uc-op-card-banner ${config.accent}`}>
                   {item.image ? (
                     <img src={item.image} alt={item.title} />
                   ) : (
                     <PageIcon size={42} />
                   )}
-                </div>
+                </div> */}
+
+                <div className={`uc-op-card-banner ${config.accent}`}>
+  {item.image ? (
+    <img
+      src={item.image}
+      alt={item.title}
+      className="uc-op-card-poster"
+    />
+  ) : (
+    <PageIcon size={42} />
+  )}
+</div>
+
+{/* BROCHURE BUTTONS DIRECTLY UNDER IMAGE */}
+
+{type === "tournaments" && item.brochure && (
+  <div className="uc-op-brochure-actions">
+    <a
+      href={item.brochure}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="uc-op-brochure-view"
+    >
+      <Eye size={17} />
+      View Brochure
+    </a>
+
+    <a
+      href={item.brochureDownload}
+      className="uc-op-brochure-download"
+    >
+      <Download size={17} />
+      Download PDF
+    </a>
+  </div>
+)}
 
                 <div className="uc-op-card-body">
                   <span className="uc-op-status">
@@ -942,11 +1200,53 @@ export function OpportunityListingPage({ type }) {
                     )}
                   </div>
 
+                  {/* CATEGORY-WISE FEES */}
+
+                  {type === "tournaments" &&
+                    Object.keys(item.category_prices || {}).length > 0 && (
+                      <div className="uc-op-category-fee-list">
+                        <strong>Entry Fees</strong>
+
+                        {Object.entries(item.category_prices).map(
+                          ([category, price]) => (
+                            <span key={category}>
+                              {category}: ₹
+                              {Number(price).toLocaleString("en-IN")}
+                            </span>
+                          )
+                        )}
+                      </div>
+                    )}
+
                   {item.deadline && (
                     <p className="uc-op-deadline">
                       Registration deadline: {formatDate(item.deadline)}
                     </p>
                   )}
+
+                  {/* BROCHURE LINKS */}
+
+                  {/* {type === "tournaments" && item.brochure && (
+                    <div className="uc-op-brochure-actions">
+                      <a
+                        href={item.brochure}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="uc-op-brochure-view"
+                      >
+                        <Eye size={17} />
+                        View Brochure
+                      </a>
+
+                      <a
+                        href={item.brochureDownload}
+                        className="uc-op-brochure-download"
+                      >
+                        <Download size={17} />
+                        Download PDF
+                      </a>
+                    </div>
+                  )} */}
 
                   {/* REGISTRATION BUTTON */}
 
@@ -1031,9 +1331,7 @@ export function OpportunityListingPage({ type }) {
 
 export function OpportunityRegistrationPage() {
   const { type, itemId } = useParams();
-
   const navigate = useNavigate();
-
   const context = useContext(OpportunityContext);
 
   const [submitted, setSubmitted] = useState(false);
@@ -1109,9 +1407,7 @@ export function OpportunityRegistrationPage() {
 
         <h1>{config.action}</h1>
 
-        <p className="uc-op-form-intro">
-          {item.title}
-        </p>
+        <p className="uc-op-form-intro">{item.title}</p>
 
         <form className="uc-op-form" onSubmit={handleSubmit}>
           <div className="uc-op-form-event">
@@ -1135,11 +1431,7 @@ export function OpportunityRegistrationPage() {
 
           <label>
             Date of Birth *
-            <input
-              type="date"
-              name="dob"
-              required
-            />
+            <input type="date" name="dob" required />
           </label>
 
           <h3>Parent / Guardian Details</h3>
@@ -1187,7 +1479,8 @@ export function OpportunityRegistrationPage() {
             type="submit"
             className="uc-op-primary-button uc-op-submit"
           >
-            Submit {type === "online-classes" ? "Enrollment" : "Registration"}
+            Submit{" "}
+            {type === "online-classes" ? "Enrollment" : "Registration"}
             <ArrowRight size={17} />
           </button>
 
