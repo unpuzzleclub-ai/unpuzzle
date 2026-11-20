@@ -13,19 +13,101 @@ import { supabase } from "../lib/supabase";
 import paymentQR from "../assets/payments-qr.png";
 import "../styles/TournamentRegistration.css";
 
+const DEFAULT_CATEGORIES = [
+  "Under 8",
+  "Under 10",
+  "Under 12",
+  "Under 15",
+  "Open",
+];
+
+function calculateAge(dob, eventDate) {
+  if (!dob || !eventDate) return null;
+
+  const birth = new Date(`${dob}T00:00:00`);
+  const event = new Date(`${eventDate}T00:00:00`);
+
+  if (Number.isNaN(birth.getTime()) || Number.isNaN(event.getTime())) {
+    return null;
+  }
+
+  if (birth > event) return null;
+
+  let age = event.getFullYear() - birth.getFullYear();
+
+  const birthdayNotReached =
+    event.getMonth() < birth.getMonth() ||
+    (event.getMonth() === birth.getMonth() &&
+      event.getDate() < birth.getDate());
+
+  if (birthdayNotReached) age--;
+
+  return age;
+}
+
+function getCategoryLimit(category) {
+  const match = category.match(/(?:under|u)[\s-]*(\d+)/i);
+  return match ? Number(match[1]) : null;
+}
+
+function getEligibleCategories(categories, age) {
+  if (age === null) return [];
+
+  return categories.filter((category) => {
+    if (category.toLowerCase() === "open") return true;
+
+    const limit = getCategoryLimit(category);
+    return limit !== null && age < limit;
+  });
+}
+
+function getDefaultCategory(categories, age) {
+  const eligible = getEligibleCategories(categories, age);
+
+  const ageCategories = eligible
+    .filter((category) => category.toLowerCase() !== "open")
+    .sort((a, b) => getCategoryLimit(a) - getCategoryLimit(b));
+
+  return ageCategories[0] || eligible.find(
+    (category) => category.toLowerCase() === "open"
+  ) || "";
+}
+
+function getCategoryPrices(tournament) {
+  let prices = tournament?.category_prices || {};
+
+  if (typeof prices === "string") {
+    try {
+      prices = JSON.parse(prices);
+    } catch {
+      prices = {};
+    }
+  }
+
+  return prices && typeof prices === "object" ? prices : {};
+}
+
 function TournamentRegistration() {
   const { itemId } = useParams();
   const { state } = useLocation();
 
   const tournament = state?.tournament;
 
+  const categories = Array.isArray(tournament?.category)
+    ? tournament.category
+    : tournament?.category
+      ? tournament.category.split(",").map((item) => item.trim()).filter(Boolean)
+      : DEFAULT_CATEGORIES;
+
+  const eventDate = tournament?.date || "";
+  const categoryPrices = getCategoryPrices(tournament);
+
   const [form, setForm] = useState({
     studentName: "",
     dob: "",
     gender: "",
     category: "",
-    fideId: "",
-    rating: "",
+    kscaId: "",
     academy: "",
     parentName: "",
     mobile: "",
@@ -38,8 +120,39 @@ function TournamentRegistration() {
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState(false);
 
+  const age = calculateAge(form.dob, eventDate);
+  const eligibleCategories = getEligibleCategories(categories, age);
+
+  const selectedFee =
+    form.category && categoryPrices[form.category] !== undefined
+      ? Number(categoryPrices[form.category])
+      : null;
+
   const updateField = (event) => {
     const { name, value } = event.target;
+
+    if (name === "mobile") {
+      const digitsOnly = value.replace(/\D/g, "").slice(0, 10);
+
+      setForm((previous) => ({
+        ...previous,
+        mobile: digitsOnly,
+      }));
+      return;
+    }
+
+    if (name === "dob") {
+      const calculatedAge = calculateAge(value, eventDate);
+      const defaultCategory = getDefaultCategory(categories, calculatedAge);
+
+      setForm((previous) => ({
+        ...previous,
+        dob: value,
+        category: defaultCategory,
+      }));
+      return;
+    }
+
     setForm((previous) => ({
       ...previous,
       [name]: value,
@@ -78,18 +191,39 @@ function TournamentRegistration() {
     setPaymentFile(file);
   };
 
-  const categories = tournament?.category
-    ? tournament.category
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean)
-    : ["Under 8", "Under 10", "Under 12", "Under 15", "Open"];
-
   const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (!tournament) {
       setMessage("Tournament details are missing. Please return to the tournament list.");
+      return;
+    }
+
+    if (!form.dob || age === null) {
+      setMessage("Please enter a valid date of birth.");
+      return;
+    }
+
+    if (!eligibleCategories.includes(form.category)) {
+      setMessage("Please select an eligible tournament category.");
+      return;
+    }
+
+    if (!Number.isFinite(selectedFee) || selectedFee < 0) {
+      setMessage("The entry fee for this category is not configured. Please contact the organiser.");
+      return;
+    }
+
+    if (!/^[6-9]\d{9}$/.test(form.mobile)) {
+      setMessage("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+
+    if (
+      form.email.trim() &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())
+    ) {
+      setMessage("Please enter a valid email address containing @ and a valid domain.");
       return;
     }
 
@@ -104,7 +238,6 @@ function TournamentRegistration() {
     let uploadedFilePath = null;
 
     try {
-      // 1. Generate a unique storage file path
       const safeFileName = paymentFile.name.replace(
         /[^a-zA-Z0-9._-]/g,
         "_"
@@ -112,7 +245,6 @@ function TournamentRegistration() {
 
       uploadedFilePath = `${itemId}/${Date.now()}-${safeFileName}`;
 
-      // 2. Upload payment screenshot to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from("payment-screenshots")
         .upload(uploadedFilePath, paymentFile, {
@@ -120,31 +252,25 @@ function TournamentRegistration() {
           upsert: false,
         });
 
-      if (uploadError) {
-        throw uploadError;
-      }
+      if (uploadError) throw uploadError;
 
-      // 3. Save registration details in Supabase Database
       const registrationData = {
         tournament_id: itemId,
         tournament_name: tournament.title,
         tournament_date: tournament.date || null,
         tournament_venue: tournament.venue || null,
-        tournament_fee: tournament.fee || null,
+        tournament_fee: selectedFee,
 
         student_name: form.studentName.trim(),
         date_of_birth: form.dob,
         gender: form.gender,
         category: form.category,
 
-        fide_id: form.fideId.trim() || null,
-        chess_rating: form.rating
-          ? Number(form.rating)
-          : null,
+        ksca_id: form.kscaId.trim() || null,
 
         academy: form.academy.trim() || null,
         parent_name: form.parentName.trim(),
-        mobile_number: form.mobile.trim(),
+        mobile_number: form.mobile,
         email: form.email.trim() || null,
         notes: form.notes.trim() || null,
 
@@ -157,17 +283,12 @@ function TournamentRegistration() {
         .from("tournament_registrations")
         .insert([registrationData]);
 
-      if (insertError) {
-        throw insertError;
-      }
+      if (insertError) throw insertError;
 
-      // 4. Show success only after both operations succeed
       setSuccess(true);
-
     } catch (error) {
       console.error("Tournament registration error:", error);
 
-      // Remove uploaded file if database insertion failed
       if (uploadedFilePath) {
         await supabase.storage
           .from("payment-screenshots")
@@ -178,7 +299,6 @@ function TournamentRegistration() {
         error.message ||
         "Unable to submit registration. Please try again."
       );
-
     } finally {
       setLoading(false);
     }
@@ -207,18 +327,16 @@ function TournamentRegistration() {
       <main className="tr-page">
         <div className="tr-success-card">
           <CheckCircle2 size={60} />
-
           <h1>Registration Submitted!</h1>
-
           <p>
             Your registration for {tournament.title} has been
             successfully submitted.
           </p>
-
+          <p><strong>Category:</strong> {form.category}</p>
+          <p><strong>Entry Fee:</strong> ₹{selectedFee}</p>
           <p className="tr-pending">
             Payment Status: Pending Verification
           </p>
-
           <Link to="/tournaments" className="tr-primary-button">
             Back to Tournaments
           </Link>
@@ -230,13 +348,11 @@ function TournamentRegistration() {
   return (
     <main className="tr-page">
       <div className="tr-container">
-
         <header className="tr-topbar">
           <Link to="/tournaments" className="tr-back-link">
             <ArrowLeft size={17} />
             Back to Tournaments
           </Link>
-
           <Link to="/" className="tr-brand">
             Unpuzzle Club
           </Link>
@@ -245,27 +361,25 @@ function TournamentRegistration() {
         <section className="tr-heading">
           <span>UNPUZZLE CLUB • CHESS</span>
           <h1>Tournament Registration</h1>
-          <p>
-            Complete the form below to register for the tournament.
-          </p>
+          <p>Complete the form below to register for the tournament.</p>
         </section>
 
         <section className="tr-event-card">
           <div>
             <span className="tr-event-label">TOURNAMENT</span>
-
             <h2>{tournament.title}</h2>
 
             {tournament.date && (
               <p>
                 <CalendarDays size={16} />
-                {new Date(
-                  `${tournament.date}T00:00:00`
-                ).toLocaleDateString("en-IN", {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                })}
+                {new Date(`${tournament.date}T00:00:00`).toLocaleDateString(
+                  "en-IN",
+                  {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  }
+                )}
               </p>
             )}
 
@@ -276,18 +390,9 @@ function TournamentRegistration() {
               </p>
             )}
           </div>
-
-          {tournament.fee && (
-            <div className="tr-event-fee">
-              <span>Entry Fee</span>
-              <strong>{tournament.fee}</strong>
-            </div>
-          )}
         </section>
 
         <form className="tr-form" onSubmit={handleSubmit}>
-
-          {/* STUDENT DETAILS */}
           <section className="tr-form-section">
             <h2>01. Student Details</h2>
 
@@ -310,6 +415,7 @@ function TournamentRegistration() {
                   name="dob"
                   value={form.dob}
                   onChange={updateField}
+                  max={eventDate || undefined}
                   required
                 />
               </label>
@@ -340,33 +446,32 @@ function TournamentRegistration() {
               </label>
 
               <label>
-                FIDE ID <span className="tr-optional">Optional</span>
+                KSCA ID
                 <input
-                  name="fideId"
-                  value={form.fideId}
+                  name="kscaId"
+                  value={form.kscaId}
                   onChange={updateField}
-                  placeholder="Enter FIDE ID if available"
-                />
-              </label>
-
-              <label>
-                Chess Rating <span className="tr-optional">Optional</span>
-                <input
-                  type="number"
-                  name="rating"
-                  min="0"
-                  step="1"
-                  value={form.rating}
-                  onChange={updateField}
-                  placeholder="Enter rating if available"
+                  placeholder="Enter KSCA ID"
                 />
               </label>
             </div>
           </section>
 
-          {/* CATEGORY */}
           <section className="tr-form-section">
             <h2>02. Tournament Category</h2>
+
+            {form.dob && (
+              <div className="tr-age-info">
+                <p>
+                  <strong>Age on tournament date:</strong>{" "}
+                  {age === null ? "Invalid date" : `${age} years`}
+                </p>
+                <small>
+                  Your age category is selected automatically. You may
+                  choose a higher eligible category.
+                </small>
+              </div>
+            )}
 
             <label>
               Select Category *
@@ -375,19 +480,29 @@ function TournamentRegistration() {
                 value={form.category}
                 onChange={updateField}
                 required
+                disabled={!form.dob || eligibleCategories.length === 0}
               >
                 <option value="">Choose category</option>
-
-                {categories.map((category) => (
+                {eligibleCategories.map((category) => (
                   <option key={category} value={category}>
                     {category}
                   </option>
                 ))}
               </select>
             </label>
+
+            {form.category && (
+              <div className="tr-selected-fee">
+                <span>Entry Fee — {form.category}</span>
+                <strong>
+                  {Number.isFinite(selectedFee)
+                    ? `₹${selectedFee}`
+                    : "Fee not configured"}
+                </strong>
+              </div>
+            )}
           </section>
 
-          {/* PARENT DETAILS */}
           <section className="tr-form-section">
             <h2>03. Parent / Guardian Details</h2>
 
@@ -408,23 +523,24 @@ function TournamentRegistration() {
                 <input
                   type="tel"
                   name="mobile"
+                  inputMode="numeric"
                   value={form.mobile}
                   onChange={updateField}
                   placeholder="10-digit mobile number"
                   pattern="[6-9][0-9]{9}"
-                  maxLength="10"
+                  maxLength={10}
                   required
                 />
               </label>
 
               <label className="tr-full">
-                Email Address <span className="tr-optional">Optional</span>
+                Email Address
                 <input
                   type="email"
                   name="email"
                   value={form.email}
                   onChange={updateField}
-                  placeholder="Enter email address"
+                  placeholder="example@email.com"
                 />
               </label>
 
@@ -441,7 +557,6 @@ function TournamentRegistration() {
             </div>
           </section>
 
-          {/* PAYMENT */}
           <section className="tr-form-section">
             <h2>04. Payment Details</h2>
 
@@ -450,17 +565,22 @@ function TournamentRegistration() {
               registration payment.
             </p>
 
+            {form.category && (
+              <div className="tr-payment-total">
+                <span>Amount to Pay</span>
+                <strong>
+                  {Number.isFinite(selectedFee) ? `₹${selectedFee}` : "—"}
+                </strong>
+              </div>
+            )}
+
             <div className="tr-payment-qr">
               <h3>Scan & Pay</h3>
-
               <img
                 src={paymentQR}
                 alt="Unpuzzle Club tournament payment QR code"
               />
-
-              <p>
-                Scan using any UPI payment application.
-              </p>
+              <p>Scan using any UPI payment application.</p>
             </div>
 
             <label className="tr-upload">
@@ -468,14 +588,12 @@ function TournamentRegistration() {
 
               <div className="tr-upload-box">
                 <Upload size={25} />
-
                 <strong>
                   {paymentFile
                     ? paymentFile.name
                     : "Choose Payment Screenshot"}
                 </strong>
-
-                <small>JPG, PNG or WEBP • Maximum 5 MB</small>
+                <small>JPG, PNG or WEBP • Maximum 2 MB</small>
               </div>
 
               <input
@@ -505,7 +623,6 @@ function TournamentRegistration() {
             Your details and payment screenshot will be securely
             submitted for verification.
           </p>
-
         </form>
       </div>
     </main>
