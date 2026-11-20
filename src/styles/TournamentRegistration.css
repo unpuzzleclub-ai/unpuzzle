@@ -577,3 +577,33 @@
   font-size: 12px;
   line-height: 1.6;
 }
+.tr-age-info,
+.tr-selected-fee,
+.tr-payment-total {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #f4f1ff;
+}
+
+.tr-age-info p {
+  margin: 0 0 7px;
+}
+
+.tr-age-info small {
+  color: #666;
+}
+
+.tr-selected-fee,
+.tr-payment-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.tr-selected-fee strong,
+.tr-payment-total strong {
+  font-size: 21px;
+  color: #6541c1;
+}
